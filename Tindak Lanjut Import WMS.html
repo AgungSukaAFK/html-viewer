@@ -1,0 +1,405 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tindak Lanjut Import WMS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lembar kerja satu kolom; ringkasan folder di atas, lalu daftar tugas per PIC / per folder dengan tombol salin. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --ink: #1c2330;
+  --muted: #5d6676;
+  --line: #dde1e7;
+  --accent: #2c5a86;
+  --accent-soft: #e6eef6;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd9;
+  --ok: #2f6b45;
+  --ok-soft: #e2f1e7;
+  --code-bg: #eef0f4;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13171e; --surface: #1a1f28; --ink: #e5e8ee; --muted: #9aa3b2; --line: #2c333f;
+    --accent: #86afd8; --accent-soft: #1f2d3d; --warn: #f0b860; --warn-soft: #382a14;
+    --ok: #82c79b; --ok-soft: #18301f; --code-bg: #222935; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13171e; --surface: #1a1f28; --ink: #e5e8ee; --muted: #9aa3b2; --line: #2c333f;
+  --accent: #86afd8; --accent-soft: #1f2d3d; --warn: #f0b860; --warn-soft: #382a14;
+  --ok: #82c79b; --ok-soft: #18301f; --code-bg: #222935; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+}
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+  display: grid; gap: 28px;
+}
+header { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 68ch; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 19px; margin: 0; }
+
+/* Ringkasan folder */
+.folders { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.folders table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 14px; }
+.folders th, .folders td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.folders tr:last-child td { border-bottom: 0; }
+.folders th { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.folders td.num { font-variant-numeric: tabular-nums; }
+.file { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); }
+.pill { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.todo { background: var(--warn-soft); color: var(--warn); }
+
+/* Toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted); padding: 7px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg button:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+
+/* Grup tugas */
+.groups { display: grid; gap: 18px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.group-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.group-head .sub { font-size: 13px; color: var(--muted); }
+.group-title { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; min-width: 0; }
+.copy { font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 7px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+.copy.copied { background: var(--accent); color: var(--surface); }
+ol.items { list-style: none; margin: 0; padding: 0; counter-reset: it; }
+ol.items > li { counter-increment: it; display: grid; grid-template-columns: 28px 1fr; gap: 0 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+ol.items > li:last-child { border-bottom: 0; }
+ol.items > li::before { content: counter(it); font-family: var(--f-mono); font-size: 13px; color: var(--muted); padding-top: 2px; font-variant-numeric: tabular-nums; }
+.item-body { min-width: 0; display: grid; gap: 6px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11.5px; font-weight: 500; letter-spacing: .02em; padding: 1px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); }
+.tag.pri { background: var(--warn-soft); color: var(--warn); }
+.tag.info { background: var(--code-bg); color: var(--muted); }
+.item-text { margin: 0; }
+.codes { font-family: var(--f-mono); font-size: 12.5px; background: var(--code-bg); border-radius: 6px; padding: 8px 10px; margin: 0; white-space: pre-wrap; word-break: break-word; max-height: 9.5em; overflow-y: auto; color: var(--ink); }
+.fallback { margin: 0 18px 14px; display: grid; gap: 6px; }
+.fallback textarea { width: 100%; min-height: 160px; font-family: var(--f-mono); font-size: 12.5px; background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+.fallback p { margin: 0; font-size: 13px; color: var(--muted); }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+code { font-family: var(--f-mono); font-size: .92em; }
+@media (max-width: 520px) {
+  ol.items > li { grid-template-columns: 22px 1fr; padding: 12px 14px; }
+  .group-head { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">WMS-GMI · Import folder “Import 23 Oktober” · kondisi prod 24 Okt 2026</div>
+    <h1>Tindak lanjut import data ke WMS</h1>
+    <p class="lede">Daftar hal yang perlu dicek atau dikerjakan oleh tiap PIC setelah data Excel PO, MR/PR, List Penawaran, Consignment Petrosea, DO, dan SPB Monitoring diimport ke WMS produksi. Semua import sudah lolos verifikasi; catatan di bawah adalah data Excel yang perlu dikonfirmasi dan pekerjaan lanjutan di WMS.</p>
+  </header>
+
+  <section class="folders" aria-label="Ringkasan folder">
+    <table>
+      <thead><tr><th>Folder</th><th>File</th><th>Masuk ke WMS</th><th>Status</th></tr></thead>
+      <tbody id="folder-rows"></tbody>
+    </table>
+  </section>
+
+  <section style="display:grid;gap:14px">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Tampilan">
+        <button type="button" id="view-pic" aria-pressed="true">Per PIC</button>
+        <button type="button" id="view-folder" aria-pressed="false">Per folder</button>
+      </div>
+      <div class="legend"><span><span class="tag pri">Penting</span> mengganggu operasional kalau tidak dikerjakan</span><span><span class="tag info">Info</span> cukup diketahui</span></div>
+    </div>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <footer>
+    <span>Angka stok, status SO/SPB, dan daftar di atas diambil dari DB produksi pada 24 Oktober 2026 setelah semua import (termasuk SPB) selesai.</span>
+    <span>Tombol “Salin” menyalin teks siap kirim lewat WhatsApp (format tebal pakai tanda bintang).</span>
+  </footer>
+</div>
+
+<script>
+const FOLDERS = {
+  po:  { name: "PO", file: "PO/Data PO WMS (1).xlsx", result: "1.035 PO Outstanding, 807 RI (stok +172.932 GMI-JAKARTA, +3.564 GMI-BPP), 876 item PO ter-link ke PR", date: "23 Okt", done: true },
+  pr:  { name: "MR & PR", file: "PR/PR WMS 21102026.xlsx", result: "155 MR + 35 MR penampung (1.620 barang), 203 PR (1.255 baris)", date: "23 Okt", done: true },
+  so:  { name: "List Penawaran (SO Reguler)", file: "List Penawaran (SO Reguler)/LIST PENAWARAN GMI.xlsx", result: "65 SO, 108 barang (hanya barang yang belum terkirim)", date: "24 Okt", done: true },
+  cs:  { name: "Consignment Petrosea", file: "Consignment Petrosea/Data Cosigment Petrosea.xlsx", result: "224 SO, 1.115 barang, 651 IK (qty 11.556)", date: "24 Okt", done: true },
+  dl:  { name: "DO", file: "DO/DO WMS 300726-161026.xls", result: "32 DO Reguler (qty 1.438) untuk 28 SO: 17 completed, 11 partial", date: "24 Okt", done: true },
+  spb: { name: "SPB", file: "SPB/ (9 file SPB MONITORING <site> 2026)", result: "13.366 SPB Jan–20 Okt (12.846 baru + 520 SPB form dilengkapi turunannya), 12.573 SPB-PO, 12.516 SPB-DO, 12.159 invoice (1.728 paid)", date: "24 Okt", done: true },
+};
+const PICS = {
+  gdg:  { name: "Gudang & Logistik", sub: "GMI-JAKARTA, GMI-BPP, DO SPB, tim kirim consignment (Afandi, Novita)" },
+  whs:  { name: "Admin Warehouse Site", sub: "SPB di 9 gudang site: GMI-TAL, MIFA, BA, MIP, IPT, DIZA, BIB, AMI, LKP" },
+  pur:  { name: "Purchasing", sub: "PO, vendor, link PO ke PR" },
+  ppic: { name: "PPIC", sub: "MR & PR (Subhan)" },
+  mkt:  { name: "Marketing SO Reguler", sub: "List Penawaran, SO & DO Reguler" },
+  mspb: { name: "Marketing SPB", sub: "PO customer & SO untuk SPB (PPA, AMM, UT)" },
+  cons: { name: "Admin Marketing Consignment", sub: "SO Consignment Petrosea (Danang)" },
+  fin:  { name: "Finance", sub: "Invoice SPB & status payment" },
+  mod:  { name: "Moderator / Admin Data", sub: "Approval, master barang, Update SOH" },
+};
+
+// p = PIC, pri = penting, info = cukup diketahui, d = daftar (ikut tersalin)
+const ITEMS = [
+  // ---------- Stok (umum)
+  { f: "cs", p: ["gdg", "mod"], pri: true,
+    t: "Update SOH GMI-BPP dari ERP. 108 barang di GMI-BPP sekarang minus (total −10.962) karena IK Jul–Okt yang diimport ikut memotong stok, sementara stok awal GMI-BPP masih dari SOH 29 Juli. Selama belum di-update, form Item Konsinyasi akan menolak karena stok gudang asal kurang.",
+    d: "Minus terbesar: 6L1-369-1 −1.714, 11L-0240 −1.127, 6L1-290 −1.038, 4L1-2470 −746, 5L17-422-BK −589, 6L1-365-1 −525, 5L17-192-370-BK −467, 5L17-314-BK −380" },
+  { f: "po", p: ["mod", "gdg"], pri: true,
+    t: "Samakan stok semua gudang dengan ERP lewat Update SOH setelah semua import selesai. Stok WMS sekarang gabungan saldo awal / SOH terakhir + RI import (penerimaan PO ERP Jan–Okt) + IK dan DO import, jadi penerimaan yang terjadi sebelum tanggal SOH terakhir bisa terhitung dua kali. Contoh: saldo GMI-JAKARTA 844.786, padahal total pergerakan stok yang tercatat cuma +166.719." },
+
+  // ---------- PO
+  { f: "po", p: ["gdg", "pur"], pri: true,
+    t: "Input Receive Item (RI) di WMS untuk PO yang dibuat lewat form WMS. 115 nomor PO di Excel sudah ada sebagai PO WMS (48 approved, 3 completed, 64 open), jadi import tidak menyentuhnya dan tidak membuat RI. Di ERP, 103 di antaranya sudah ada penerimaan (156 barang, total qty diterima 54.520) tapi di WMS baru 33.",
+    d: "25833, 25853, 25854, 25855, 25856, 25857, 25858, 25859, 25860, 25861, 25862, 25873, 25874, 25875, 25876, 25877, 25878, 25879, 25880, 25881, 25883, 25885, 25888, 25889, 25890, 25893, 25894, 25895, 25910, 25913, 25933, 25934, 25947, 25955, 25956, 25957, 25958, 25960, 25961, 25962, 25967, 25971, 25975, 25976, 25977, 25978, 25984, 26033, 26043, 26054, 26055, 26057, 26058, 26059, 26063, 26066, dan lainnya (total 103 PO)" },
+  { f: "po", p: ["pur"],
+    t: "Cek 16 barang yang qty pesanannya beda antara PO WMS (dibuat lewat form) dan ERP. Perbaiki yang salah.",
+    d: "25855 14L-0183-1 (WMS 72 / ERP 100), 25855 14L-0184-1 (36 / 50), 25890 14L-0110 (0 / 10), 25976 14L-0595 (7 / 43), 26033 14L-0591 (8 / 38), 26063 5L17-394-BK (0 / 39), 26206 14L-0591 (30 / 38), 26206 14L-0673 (0 / 15), 26439 14L-0110 (0 / 40), 26439 14L-0135 (0 / 5), 26439 14L-0444-5 (0 / 3), dan 5 lainnya" },
+  { f: "po", p: ["pur"],
+    t: "Cek 9 barang yang harganya beda antara PO WMS dan ERP.",
+    d: "25893 5L1-3-30GE (WMS 225.000 / ERP 235.000), 26055 RM-Plat-M8 (71,25 / 71), 26116 6L1-296 (0,108 / 0), 26116 6L1-297 (0,108 / 0), 26116 6L1-365-1 (0,0831 / 0), dan 4 lainnya" },
+  { f: "po", p: ["pur"],
+    t: "Lengkapi data 49 vendor baru yang dibuat otomatis oleh import (kode GMI-21102601 s.d. GMI-21102649): alamat, kontak, NPWP, dsb.",
+    d: "Contoh: GMI-21102601 88Elektronik, GMI-21102602 Adit Jaya Technik, GMI-21102603 Agung Jaya Pratama, GMI-21102604 Dany Jaya Abadi, GMI-21102605 Indoguard Fire Extinguisher, GMI-21102606 King Elektrik" },
+  { f: "po", p: ["mod", "pur"],
+    t: "Lengkapi nama 46 barang dari import PO yang namanya masih sama dengan part number (di master total ada 54 barang seperti ini).",
+    d: "11L-0862-9-13.5-BK, 11L-1529-7-52-SD, 11L-1530-7-1, 11L-1530-7-2, 11L-1530-7-3, 11L-1530-7-52, 11L-1530-7-8008, 11L-2273-1016, 11L-3554-21, 11L-3907-10, 11L-6442, 11L-6444-I, 11L-6446-I, 11L-6455, dan lainnya (filter di halaman Barang: nama = part number)" },
+  { f: "po", p: ["mod"], pri: true,
+    t: "Terapkan template approval ke 1.035 PO hasil import. PO Outstanding ini belum punya jalur approval sama sekali." },
+  { f: "po", p: ["pur"],
+    t: "1.002 dari 1.878 item PO Outstanding belum terhubung ke PR. Tautkan manual lewat panel Link PR di detail PO bila memang ada PR-nya.",
+    d: "Penyebab: 365 item PR rujukannya tidak ada di WMS; 178 barang tidak ada di PR rujukan; 32 item PR rujukan sudah ter-PO penuh; 8 item PR-GMI-4241 / 4244 (PO 26543, 26694) approved tapi barangnya tidak ada di PR; 2 item PR-GMI-4263 masih open (PO 26773, 26784); 2 item PR-GMI-4026 ditolak (PO 26170, 26262); sisanya tidak punya nomor PR di ERP" },
+  { f: "po", p: ["pur"], info: true,
+    t: "Saat link PO ke PR, 3 item PO dipecah supaya sesuai sisa PR, dan 12 item PR sekarang ter-PO melebihi qty PR (barang sudah diterima, jadi di-link utuh).",
+    d: "Dipecah: 25719 MAN-ENGSELPIANO (2.500 + 300), 26490 5L17-239-1 (100 + 100), 26602 GMI-ST19BK-1 (197 + 3). Melebihi PR: PR-GMI-3963 11L-1392-1 (25 / 15), PR-GMI-4019 10L262-6 (24 / 20), PR-GMI-4062 7L64-WP (100 / 50), PR-GMI-4065 14L-0134 (10 / 6), PR-GMI-4106 14L-0096 (23 / 20), PR-GMI-4130 14L-0188-1 (23 / 18), dan 6 lainnya" },
+
+  // ---------- MR & PR
+  { f: "pr", p: ["ppic"], pri: true,
+    t: "Atur gudang sumber share stock untuk 37 barang MR import. Jatah share stock-nya sudah ada tapi gudang sumbernya kosong (Excel tidak menyebut gudang supply). Atur lewat Moderator Edit MR.",
+    d: "GMIBA/2026/05/03/1 5L1-3-30BK (4), GMIBA/2026/07/05/01 5L2-4-30RD (1), GMIBIB/2026/09/06/36 14L-0208-A40 (10), GMIBIB/2026/09/06/36 14L-0300-U (5), GMIBPN/2026/05/08/001 2L3-2F (50), GMIBPN/2026/07/01/001 3L1-5-112dB (15), GMIBPN/2026/07/01/001 3L3-8AA (12), GMIBPN/2026/08/20/001 6L1-100-1 (200), GMIBPN/2026/08/20/001 6L1-46-1 (200), GMIBPN/2026/08/20/001 6L1-112-1 (200), GMIBPN/2026/08/20/001 6L1-48-1 (200), GMIBPN/2026/09/22/001 10L262-6 (3), GMIBPN/2026/16/03/001 1L5-S-1-HD/PC-2,5-v.2 (2), GMIBPN/2026/18/5/001 5L17-187-BK (25), GMIBPN/2026/30/3/001 1L5-S-1-HD/PC-2,5-v.2 (13), GMIBPN/2026/6/12/001 10L296-160-VN (1), GMIBPP/2026/07/25 1L5-S-1-HD/PC-2,5-v.2 (30), GMIDIZA/2026/05/17/004 12L-BAUT-M8X70 (20), GMIDIZA/2026/05/17/004 14L-0627 (6), GMIDIZA/2026/05/17/004 14L-0120-1 (10), GMIENIM/26/05/13/1 14L-0107-2 (50), GMIHO/2026/04/20/001 1L40-B (2), GMIHO/2026/05/06/02 11L-5160-FG-FB (8), GMIHO/2026/05/06/02 11L-5160-FG-H (10), GMIHO/2026/05/13/03 11L-3653 (5), GMIIPT/2026/05/02/055 13L-HRLED-NV2 (1), GMIIPT/2026/05/02/055 10L296-360L-VN2 (12), GMILHT/2026/06/25/04 5L1-3-30BL (7), GMILHT/2026/07/01/01 2L3-2F (3), GMILHT/2026/07/21/04 2L3-2S (23), GMITAL/2026/05/11/001 4LT1135-5 (11), GMITAL/2026/08/27/001 13L-HRLED-NV2 (1), GMITAL/2026/08/27/001 11L-BMDL-NV2 (1), GMITAL/2026/08/27/001 11L-SBL-NV2 (1), GMITAL/2026/08/27/001 10L296-360L-VN2 (6), GMITAL/2026/08/27/001 10L296-120L-VN2 (6), GMITAL/2026/08/27/001 10L290-N (1)" },
+  { f: "pr", p: ["ppic"],
+    t: "Cek 35 MR penampung berkode “<No PR>-TANPA-MR” (lokasi GMI-JAKARTA). MR ini dibuat untuk baris PR OPEN yang di Excel tidak punya referensi MR. Kalau ada MR aslinya, sesuaikan." },
+  { f: "pr", p: ["ppic", "pur"],
+    t: "Kemungkinan PR dobel: PR-GMI-4259 dan PR-GMI-4275 sama-sama approved untuk MR GMITAL/2026/10/04/001 barang 14L-0457-1. Tolak salah satu kalau memang dobel." },
+  { f: "pr", p: ["ppic"],
+    t: "Ada kode PR yang dobel beda huruf besar/kecil di WMS: PR-GMI-4074 dan PR-GMI-4213 masing-masing tercatat 2 kali. Rapikan supaya tidak membingungkan saat buat PO." },
+  { f: "pr", p: ["ppic"],
+    t: "PR-GMI-4026 berstatus ditolak di WMS, tapi di sheet PR OPEN Excel masih tercantum. Pastikan statusnya yang benar." },
+  { f: "pr", p: ["ppic"],
+    t: "15 barang MR yang kolom NO PR-nya berisi lebih dari satu PR. Yang dipakai PR terakhir; cek kalau seharusnya PR yang lain.",
+    d: "GMIAMI/2026/05/24/001 14L-0271 (PR-GMI-3734, 3875 → 3875), GMIAMI/2026/07/15/1 14L-0188-1 (4026 → 4052), GMIBA/2026/07/16/01 14L-0278-24T (4000, 4149 → 4149), GMIBA/2026/10/06/01 11L-2103 (4258 / 4256 → 4256), GMIBIB/2026/03/28/094 14L-0122-2 (3601, 3890 → 3890), GMIBIB/2026/07/20/25 14L-0217-A3060 (4006, 4064 → 4064), GMIDIZA/2026/05/17/004 14L-0060-1/2 (3804 & 3894 → 3894), GMIHO/2026/08/20/001 6L1-135-1 (4091 / 4092 → 4092), dan 7 lainnya" },
+  { f: "pr", p: ["ppic"],
+    t: "Baris Excel yang tidak diimport: 57 baris MR dengan qty 0, 1 baris GMIHO/2026/20/05/001 yang part number-nya berisi kode MR, dan MR GMIBA/2026/10/19/01 yang kolom NO PR-nya berisi “46316” (bukan nomor PR) untuk 3 barang. Input manual kalau masih dibutuhkan.",
+    d: "Contoh qty 0: GMIBA/2026/09/24/01 7L10-4-1, GMIBPN/2026/6/12/001 (3 barang), GMIHO/2026/06/11/001 Rm-Plat-M10, GMIHO/2026/07/09-02 (beberapa kabel 5L2-4-30), GMIHO/2026/07/22/001 9L775" },
+  { f: "pr", p: ["ppic"], info: true,
+    t: "Mapping SITE ke gudang: KM10, HO, MARKETING, MANADO → GMI-JAKARTA; BPN → GMI-BPP; site lain → GMI-<SITE>. Pembuat MR/PR import tercatat atas nama Subhan (ppic@garudamart.com). 227 MR dan 85 PR di Excel sudah ada di WMS sebelumnya dan tidak ditimpa; kalau Excel lebih baru, update manual." },
+
+  // ---------- SO Reguler
+  { f: "so", p: ["mkt"], pri: true,
+    t: "Mulai sekarang DO untuk SO Reguler dibuat di WMS. List Penawaran ternyata belum menandai 44 barang (28 SO) yang sudah di-DO di ERP; itu sudah dibereskan lewat import DO, tapi kalau DO berikutnya hanya di ERP, SO di WMS akan terlihat masih open dan bisa di-DO dobel." },
+  { f: "so", p: ["mkt"],
+    t: "Isi due date untuk 22 SO import yang due date-nya kosong. Dua di antaranya sengaja dikosongkan karena di Excel due date-nya lebih awal dari tanggal SO: 51859 (SO 6 Okt, due 2 Okt) dan 52377 (SO 19 Okt, due 29 Sep).",
+    d: "47765, 48025, 48036, 50512, 50643, 50713, 50720, 50756, 50829, 50881, 50882, 50906, 50907, 50910, 51230, 51265, 51773, 51774, 51782, 51859, 51877, 52377" },
+  { f: "so", p: ["mkt"],
+    t: "Isi nama marketing untuk 28 SO import yang kolom MARKETING-nya kosong di Excel.",
+    d: "50512, 50643, 50713, 50720, 50756, 50829, 50881, 50882, 50906, 50907, 50911, 50912, 50913, 51001, 51018, 51053, 51230, 51265, 51471, 51773, 51774, 51824, 51859, 51860, 51877, 52037, 52040, 52324" },
+  { f: "so", p: ["mkt"],
+    t: "SO 51473 (Darma Henwa) barang 7L65-11: qty di WMS 6 (dari List Penawaran), tapi di ERP qty SO dan DO-nya 9. DO di WMS dibatasi 6. Kalau yang benar 9, edit qty SO lalu tambah DO 3." },
+  { f: "so", p: ["mkt"],
+    t: "SO 2025 yang masih punya barang open di Excel tidak diimport: 35100 dan 35101 (PT Putra Perkasa Abadi, 23 Jul 2025, masing-masing 5 barang bertanda SPB). Konfirmasi masih berlaku atau sudah ditutup." },
+  { f: "so", p: ["mkt"], info: true,
+    t: "Barang yang sama dalam 1 SO digabung jadi 1 baris (qty dijumlah) karena form Edit SO menolak barang dobel: 50882, 50907 (3 barang), 50912, 50913, 51001, 52349 (2L3-42S-FG 10 baris → qty 20)." },
+  { f: "so", p: ["mkt"], info: true,
+    t: "Yang perlu diketahui: 4 SO (52383, 52384, 52392, 52413) sudah dibuat lewat form dan isinya sama dengan Excel, jadi dilewati. 4 baris dengan NO DO “update no DO” tanpa nomor dianggap sudah kirim (SO 32640, 35566, 39520, 40454). Baris tanpa No SO (“?”, baris 3949–3950) dilewati. Darma Henwa memakai akun INV-1128 (IDR), United Tractor memakai akun 11 USD." },
+
+  // ---------- Consignment
+  { f: "cs", p: ["gdg", "cons"], pri: true,
+    t: "Mulai sekarang Item Konsinyasi (IK) dibuat di WMS. Tujuannya sekarang site customer (bukan gudang GMI). Sisa 262 barang (qty 2.637) dari SO import belum terkirim. IK yang hanya dibuat di ERP setelah 22 Okt tidak akan masuk ke WMS." },
+  { f: "cs", p: ["gdg"],
+    t: "Cek 3 nomor IK yang kemungkinan salah ketik di Excel (sudah diimport apa adanya).",
+    d: "24729 (SO 50342, 6L1-290, baris 515), 346522 (SO 51038, 6L1-369-1, baris 760), 347885 (SO 48695, 7L10-10-50, baris 193)" },
+  { f: "cs", p: ["gdg"],
+    t: "Kirim nomor dan tanggal IK asli untuk 7 baris yang di Excel terkirim tanpa nomor IK. Di WMS dicatat sebagai IK “TANPA-NO-<No SO>”; 5 di antaranya juga tanpa tanggal kirim (dipakai tanggal SO).",
+    d: "TANPA-NO-49037 7L65-18 qty 5, TANPA-NO-50372 14L-0557 qty 1, TANPA-NO-50736 5L17-192-370-BK qty 10, TANPA-NO-50737 5L17-422-BK qty 3 + 7L65-18 qty 3, TANPA-NO-50760 5L17-192-370-BK qty 8, TANPA-NO-50821 4L4-247570 qty 5, TANPA-NO-51465 6L1-291 qty 10" },
+  { f: "cs", p: ["gdg"],
+    t: "SO 50825 barang 4L4-247570 (baris 719): qty kirim 30 melebihi qty SO 20. Pastikan mana yang benar." },
+  { f: "cs", p: ["gdg"], info: true,
+    t: "20 baris tanpa gudang asal dianggap dikirim dari GMI-BPP; baris GMI-HO dicatat dari GMI-JAKARTA. 12 nomor IK punya tanggal kirim berbeda antar baris; yang dipakai tanggal terbanyak atau paling awal.",
+    d: "Tanggal berbeda: 33024, 33139, 34037, 34245, 34246, 34247, 34731, 34743, 34884, 34968, 34999, 35002" },
+  { f: "cs", p: ["cons"],
+    t: "Konfirmasi site untuk SO 51237, 51575, dan 52358. Di Excel tertulis “SINI”, yang tidak ada di master site Petrosea, jadi SO dan IK-nya tercatat ke site teks “SINI”. Kalau site itu memang ada, tambahkan di Master Customer → Kelola Site." },
+  { f: "cs", p: ["cons"],
+    t: "SO 52449 sudah dibuat lewat form dengan qty 32, sedangkan di Excel 28. Cek mana yang benar. 6 SO lain yang juga sudah dibuat lewat form (52450, 52451, 52472, 52473, 52509, 52560) isinya sama dengan Excel." },
+  { f: "cs", p: ["cons"], info: true,
+    t: "5 SO yang header-nya berbeda antar baris di Excel, dipakai nilai terbanyak: 48427 site KJA / (CEP) → KJA; 49063 due date 20 / 30 Agu → 20 Agu; 50760 dua No PO (4420233120 / 4420232016) dan site BSL / BC Project → BSL; 52091 dua No PO (4420235109 / 4420234967). Semua SO memakai customer 59 PETROSEA BP (IDR). 53 barang dobel dalam 1 SO tetap jadi baris terpisah sesuai Excel." },
+  { f: "cs", p: ["cons", "gdg"], info: true,
+    t: "IK historis (hasil import) tidak perlu dokumen Penerimaan dan tidak muncul di daftar “IK belum dikonfirmasi”. Stok customer Petrosea di WMS mulai dari 0." },
+  { f: "cs", p: ["mod"],
+    t: "Cek nama dan satuan 3 barang baru yang dibuat oleh import consignment.",
+    d: "5LAVSS2-BK-100, 5LAVSS2-GR-30, 5LAVSS2-RD-100 (nama dari deskripsi Excel, satuan Roll)" },
+
+  // ---------- DO
+  { f: "dl", p: ["gdg"],
+    t: "Konfirmasi gudang pengirim. File DO ERP tidak punya kolom gudang, jadi semua 32 DO import dicatat dikirim dari GMI-JAKARTA dan stok GMI-JAKARTA dipotong. Kalau ada DO yang sebenarnya dari gudang lain, kabari supaya stoknya dipindah." },
+  { f: "dl", p: ["gdg"],
+    t: "5 barang di GMI-JAKARTA jadi minus setelah DO import. Cek stok fisiknya.",
+    d: "4L1-2470 (−27), 13L-HRSAFETYDUMP-VOLVO (−20), 5L17-91-15-10 (−15), 10L273-70 (−2), 6L1-179 (−1)" },
+  { f: "dl", p: ["mkt"],
+    t: "11 SO masih partial setelah DO import (masih ada barang yang belum di-DO). Buat DO sisanya di WMS saat dikirim. 17 SO lain sudah completed.",
+    d: "Partial: 50512, 50756, 50829, 50882, 50906, 50907, 50912, 50913, 51265, 51473, 52040" },
+  { f: "dl", p: ["mkt"], info: true,
+    t: "15 baris DO ERP untuk barang yang di List Penawaran sudah ditandai terkirim (jadi tidak pernah masuk sebagai barang SO di WMS) tidak diimport: SO 50881 (6L1-291, 6L1-292), 50913 (RND-AWG18BK), 52054 (12 barang, DO 56159 dan 56197). SO 52483 yang dibuat lewat form ikut mendapat DO 56653." },
+
+  // ---------- SPB
+  { f: "spb", p: ["whs", "mod"], pri: true,
+    t: "Update SOH 9 gudang site dari ERP. SPB import bertanggal 29 Juli ke atas ikut memotong stok gudang site, sedangkan barang yang masuk ke site sejak Agustus belum pernah tercatat di WMS. Akibatnya 598 barang sekarang minus. Selama belum di-update, form SPB menolak barang yang stoknya kurang.",
+    d: "GMI-BA 134 barang (−4.207): 6L1-290 −441, 5L17-239-1 −361, 7L10-8-1 −282 · GMI-MIP 76 (−3.571): 5LAVSS1.25-BL −723, 5LAVSS1.25-BK −505 · GMI-BIB 71 (−1.864): 14L-0185-1 −1.083 · GMI-MIFA 75 (−1.681): 11L-0240 −201 · GMI-TAL 73 (−1.633): 6L1-137-1 −140 · GMI-DIZA 58 (−605) · GMI-IPT 48 (−589) · GMI-LKP 47 (−424) · GMI-AMI 16 (−96)" },
+  { f: "spb", p: ["whs"], pri: true,
+    t: "Mulai sekarang SPB diinput di WMS, tidak hanya di Excel SPB Monitoring. Semua SPB yang ada di Excel sudah masuk, jadi jangan input ulang SPB lama lewat form (akan ditolak “Nomor SPB sudah digunakan”). Yang perlu diinput: SPB setelah tanggal terakhir di Excel masing-masing site.",
+    d: "Tanggal SPB terakhir di Excel: GMI-BA, GMI-DIZA, GMI-IPT 20 Okt; GMI-BIB, GMI-LKP, GMI-MIFA, GMI-MIP, GMI-TAL 19 Okt; GMI-AMI 4 Okt (cek apakah Excel AMI belum di-update)" },
+  { f: "spb", p: ["mspb"], pri: true,
+    t: "814 SPB belum punya PO customer. Input SPB-PO di WMS begitu PO masuk. Catatan: di WMS, SPB yang belum ber-PO juga berstatus “DONE QUOT” (sama dengan SPB yang sudah ber-invoice), jadi cek lewat Report SPB (kolom NO PO kosong), bukan dari kolom status.",
+    d: "GMI-BA 211, GMI-LKP 123, GMI-BIB 100, GMI-IPT 97, GMI-MIP 92, GMI-MIFA 77, GMI-TAL 74, GMI-AMI 22, GMI-DIZA 18. Paling lama (cek masih menunggu PO atau batal): GMI-TAL sejak 2 Apr, GMI-LKP 26 Apr, GMI-IPT 10 Mei, GMI-AMI 23 Jul" },
+  { f: "spb", p: ["gdg"],
+    t: "94 SPB sudah ada PO tapi belum ada DO. Buat SPB-DO di WMS saat barang dikirim. Yang sudah lama kemungkinan sudah dikirim tapi belum dicatat di Excel.",
+    d: "GMI-MIP 26, GMI-TAL 20, GMI-DIZA 15, GMI-IPT 15, GMI-MIFA 14, GMI-BIB 3, GMI-BA 1. Paling lama: GMI-MIFA sejak 1 Mar, GMI-TAL 18 Mei, GMI-MIP 15 Jun, GMI-IPT 5 Agu" },
+  { f: "spb", p: ["gdg"],
+    t: "Kirim nomor DO asli untuk 54 invoice yang di Excel tidak punya No DO dan tidak ketemu di file DO ERP (file DO ERP baru mulai 30 Jul). Di WMS dicatat sebagai DO “TANPA-DO-<No SO>”, atau “TANPA-DO-<No Invoice>” kalau SO juga kosong. No DO tidak bisa diubah lewat form, jadi nomor aslinya diperbaiki lewat SQL.",
+    d: "GMI-DIZA 20 (SO 44268–44278, 44463, 44901, 45941, 45942, 45943, 45946, 46196, 46279, 46881) · GMI-AMI 8 (invoice GMI26-0052098 s.d. 0052102, 0053732, 0053940, 0054044) · GMI-BIB 7 (SO 46103, 46132, 47289, 47361, 47365, 47689, 48037) · GMI-BA 6 (SO 46124, 47014, 47288, 47682, 47688, 48020) · GMI-MIFA 4 (SO 46631, 50565; invoice GMI26-0049332, 0054479) · GMI-MIP 4 (SO 47144, 47149, 50545, 51213) · GMI-LKP 3 (SO 47833, 47836, 48280, mencakup 56 SPB) · GMI-IPT 1 (SO 47552) · GMI-TAL 1 (SO 48319)" },
+  { f: "spb", p: ["fin"], pri: true,
+    t: "Perbarui status payment invoice SPB. 10.431 dari 12.159 invoice import tercatat unpaid karena kolom STATUS PAYMENT dan TANGGAL PAYMENT di Excel kosong; hanya 1.728 yang ditandai PAID atau punya tanggal payment. Mengubahnya satu per satu di Report SPB tidak realistis, jadi kirim daftar invoice yang sudah lunas (misalnya export pelunasan piutang dari ERP) supaya diupdate sekaligus.",
+    d: "Unpaid per gudang: GMI-MIFA 2.653, GMI-BA 2.185, GMI-MIP 1.837, GMI-TAL 1.166, GMI-IPT 826, GMI-BIB 739, GMI-DIZA 711, GMI-AMI 258, GMI-LKP 56. Sekitar 7.056 di antaranya invoice sebelum Agustus" },
+  { f: "spb", p: ["fin"],
+    t: "650 SPB sudah di-DO tapi belum ada invoice. Buat SPB Invoice di WMS.",
+    d: "GMI-BA 171, GMI-BIB 100, GMI-MIFA 99, GMI-MIP 98, GMI-IPT 70, GMI-TAL 54, GMI-DIZA 52, GMI-AMI 6. Paling lama: GMI-MIFA sejak 8 Jan, GMI-IPT 3 Jun, GMI-MIP 3 Jun" },
+  { f: "spb", p: ["mspb"],
+    t: "Isi No PO untuk 8 SPB yang di Excel sudah ada DO/invoice tapi No PO-nya kosong. Di WMS dicatat sebagai SPB-PO “TANPA-PO”. No PO tidak bisa diubah lewat form, jadi kirim nomor yang benar untuk diperbaiki lewat SQL.",
+    d: "GMIAMI/2026/09/109(MARUWAI), GMIAMI/2026/09/1180, GMIAMI/2026/09/1181, GMIAMM/2026/04/4305, GMIAMM/2026/09/5618, GMILHT/2026/10/6881 (DO 56284), GMIAMMSBS/2026/10/2582 (DO 56433), GMIAMMSBS/2026/10/2609 (DO 56415)" },
+  { f: "spb", p: ["mspb"],
+    t: "Cek 28 DO yang No SO-nya di Excel beda dengan No SO di DO ERP (kebanyakan selisih 1 angka). Di WMS dipakai No SO dari Excel. Kalau yang benar versi ERP, No SO bisa dikoreksi moderator lewat edit SPB-PO.",
+    d: "DO 53528 (Excel 49372 / ERP 49375), 53746 (49615 / 49616), 54381 (50204 / 50205), 54388 (50201 / 50202), 54768 (50519 / 50629), 54052 (7000264675 / 49863), 53052 (48845 / 48732), 54392 (50174 / 50175), 55596 (50976 / 50994), 53986 (49749 / 49750), 54444 (49194 / 50326), 54753 (50492 / 50639), 55446 (51369 / 51370), 52806 (4863 / 48636), 53865 (49753 / 49694), 53984 (49745 / 49746), 53913 (49780 / 49782), 54107 (49896 / 49897), 55484 (51432 / 51434), 55486 (51434 / 51432), 53510 (48632 / 49365), 54759 (50455 / 50495), 54746 (50462 / 50561), 52882 (48905 / 48734), 53226 (49049 / 49045), 56047 (51825 / 51826), 54175 (49954 / 49953), 52881 (48734 / 48733)" },
+  { f: "spb", p: ["whs"],
+    t: "Cek SPB yang dibuat lewat form WMS tapi isinya beda dengan Excel. SPB WMS tidak diubah oleh import, cuma dilaporkan di sini. Sebagian besar karena barang dobel di Excel digabung jadi 1 baris saat input form.",
+    d: "Qty beda (WMS / Excel): GMIBIB/08/2026/3606 14L-0185-1 (2 / 200), GMIAMM/2026/08/5135 6L1-110-1 (10 / 20), GMIAMM/2026/08/5140 SC 120-12 (5 / 8), GMIAMM/2026/08/5136 5L17-17-16-1 (2 / 1), GMIAMM/2026/08/5170 6L1-110-1 (6 / 2), 6L1-290 (6 / 1), 7L65-4 (4 / 1), GMIAMMSBS/2026/08/2244 14L-0518-1/2 (1 / 2), GMIAMMSBS/2026/08/2417 12L-BAUT-M6X20 (5 / 3), GMIBIB/07/2026/3593 14L-0677-3/4 (2 / 1), GMIUT/2026/07/078 14L-0142-D (2 / 1). Baris Excel yang tidak ada di SPB WMS (PO/DO/invoice-nya tidak ikut masuk): GMIAMM/2026/08/5127 14L-0060-5/8 qty 3; GMIAMM/2026/08/5170 baris dobel 6L1-110-1, 6L1-290 (2), 7L64-WP (4), 7L65-4 (3), 5L17-17-16-1 (5136); GMIAMMSBS/2026/07/2109 11L-1530-7-15-I. Barang WMS yang tidak ada di Excel: GMIAMMSBS/2026/07/2109 (6 barang), GMIUT/2026/07/073 14L-0093 dan 14L-0107-2" },
+  { f: "spb", p: ["mod"],
+    t: "Cek 23 barang baru yang dibuat dari Excel SPB. Beberapa kelihatan salah ketik dan sebenarnya sudah ada di master; kalau benar, ganti barangnya di SPB terkait lalu hapus barang barunya.",
+    d: "Diduga salah ketik: 0184-1 → 14L-0184-1 (Hose 1/2), 122-BAUT-M6X40 → 12L-BAUT-M6X40, 12L-BAUT-M8-40 → 12L-BAUT-M8X40, 5417-239-1 → 5L17-239-1, 1L-SBL-NV2 → 11L-SBL-NV2, 14L-0190 → 14L-0190-1 (Ferrule 5/8). Cek varian: 11L-1708-200W-O, 14L-0135-2 (Motor Blower HD 785 Genuine), 14L-0208-B38-B (V-Belt B38 Bando). Lainnya: 14L-0088, 14L-0104, 14L-0121-1, 14L-0123-S, 14L-0125-1, 14L-0125-S, 14L-0126-S, 14L-0127-S, 14L-0130-1, 14L-0256-S, 14L-0278-24-R, 14L-0562, 14L-0564, 14L-0624-1" },
+  { f: "spb", p: ["whs", "mod"], info: true,
+    t: "Aturan stok SPB import: SPB bertanggal sebelum 29 Juli hanya riwayat (tidak memotong stok, karena sudah tercermin di SOH 28 Jul / 2 Agu). SPB 29 Juli ke atas memotong stok gudang site. Cancel atau hapus SPB sekarang hanya mengembalikan stok yang benar-benar dipotong, jadi membatalkan SPB lama tidak menambah stok." },
+  { f: "spb", p: ["gdg", "fin"], info: true,
+    t: "2.188 baris yang No DO-nya kosong di Excel dilengkapi dari file DO ERP (dicocokkan lewat No SO + part); kemungkinan Excel-nya belum di-update. Satu DO ERP sekarang boleh dipakai di beberapa SPB, dan satu invoice boleh mencakup beberapa DO, sesuai kenyataan di ERP." },
+  { f: "spb", p: ["whs"], info: true,
+    t: "Data Excel yang dirapikan saat import.",
+    d: "4 SPB CANCEL dibuat berstatus CANCELLED (GMIAMM/2026/04/4320, GMIAMM/2026/05/4601, GMIAMMIPT/2026/01/0990, GMIBIB/08/2026/3624) · 14 SPB GMIAMMIPT/2026/09/2093–2106 tercatat di sheet SEP dan OKT, dipakai 1 · 15 SPB punya 2 tanggal, dipakai yang paling awal · GMIAMI/2026/02/891 dan 892 bertahun 2027 → 2026 · qty GMIAMMIPT/2026/05/1441 14L-0184-1 “1,5” → 2, GMITJE/2026/06/8451 6L1-48-1 “1O” → 10 · 3 No PO berisi catatan WARRANTY dikosongkan (GMIAMMSBS 05/14, 05/31, 06/12) · tanggal SO tidak terbaca (mis. “9/21/0206”, “08/10/1016”) di 33 SPB IPT, MIP, DIZA, MIFA, TAL dikosongkan" },
+  { f: "spb", p: ["mod"], info: true,
+    t: "Di WMS, status SPB “DONE QUOT” dipakai untuk dua kondisi: SPB yang belum ber-PO dan SPB yang sudah ber-invoice (aturan aplikasi saat ini). Kalau membingungkan tim, bisa diusulkan label status baru. Sekarang ada 12.619 DONE QUOT, 650 DO_ATTACH, 94 PO_ATTACH, 5 CANCELLED." },
+];
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function renderFolders() {
+  $("#folder-rows").innerHTML = Object.values(FOLDERS).map((f) => `
+    <tr>
+      <td><strong>${esc(f.name)}</strong><br><span class="file">diimport ${esc(f.date)}</span></td>
+      <td class="file">${esc(f.file)}</td>
+      <td class="num">${esc(f.result)}</td>
+      <td><span class="pill ${f.done ? "done" : "todo"}">${f.done ? "Sudah diimport" : "Belum"}</span></td>
+    </tr>`).join("");
+}
+
+function groupsFor(view) {
+  if (view === "pic") {
+    return Object.entries(PICS).map(([k, pic]) => ({
+      key: k, title: pic.name, sub: pic.sub,
+      items: ITEMS.filter((it) => it.p.includes(k)).sort((a, b) => (b.pri ? 1 : 0) - (a.pri ? 1 : 0) || (a.info ? 1 : 0) - (b.info ? 1 : 0)),
+      tagOf: (it) => FOLDERS[it.f].name,
+    })).filter((g) => g.items.length);
+  }
+  return Object.entries(FOLDERS).map(([k, f]) => ({
+    key: k, title: f.name, sub: f.file,
+    items: ITEMS.filter((it) => it.f === k),
+    tagOf: (it) => it.p.map((p) => PICS[p].name).join(" · "),
+  })).filter((g) => g.items.length);
+}
+
+function waText(group, view) {
+  const head = view === "pic"
+    ? `*Tindak lanjut import data WMS untuk ${group.title}*`
+    : `*Tindak lanjut import data WMS: ${group.title}*`;
+  const lines = [head, "(import Excel folder \"Import 23 Oktober\" ke WMS prod, 23–24 Okt 2026)", ""];
+  group.items.forEach((it, i) => {
+    const mark = it.pri ? " *[PENTING]*" : it.info ? " _[info]_" : "";
+    lines.push(`${i + 1}. [${group.tagOf(it)}]${mark} ${it.t}`);
+    if (it.d) lines.push(`   ${it.d}`);
+    lines.push("");
+  });
+  return lines.join("\n").trim();
+}
+
+let view = "pic";
+try { view = localStorage.getItem("tl-view") || "pic"; } catch (e) {}
+
+function render() {
+  $("#view-pic").setAttribute("aria-pressed", String(view === "pic"));
+  $("#view-folder").setAttribute("aria-pressed", String(view === "folder"));
+  const groups = groupsFor(view);
+  $("#groups").innerHTML = groups.map((g, gi) => `
+    <article class="group" id="g-${g.key}">
+      <div class="group-head">
+        <div class="group-title"><h2>${esc(g.title)}</h2><span class="sub">${esc(g.sub)} · ${g.items.length} catatan</span></div>
+        <button type="button" class="copy" data-g="${gi}" id="copy-${g.key}">Salin untuk WhatsApp</button>
+      </div>
+      <ol class="items">
+        ${g.items.map((it) => `
+          <li><div class="item-body">
+            <div class="tags"><span class="tag">${esc(g.tagOf(it))}</span>${it.pri ? '<span class="tag pri">Penting</span>' : ""}${it.info ? '<span class="tag info">Info</span>' : ""}</div>
+            <p class="item-text">${esc(it.t)}</p>
+            ${it.d ? `<p class="codes">${esc(it.d)}</p>` : ""}
+          </div></li>`).join("")}
+      </ol>
+      <div class="fallback" hidden></div>
+    </article>`).join("");
+  document.querySelectorAll(".copy").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const g = groups[Number(btn.dataset.g)];
+      const text = waText(g, view);
+      const box = btn.closest(".group").querySelector(".fallback");
+      const showFallback = () => {
+        box.hidden = false;
+        box.innerHTML = '<p>Browser tidak mengizinkan salin otomatis. Teks sudah dipilih, tekan Ctrl+C / Cmd+C.</p><textarea readonly></textarea>';
+        const ta = box.querySelector("textarea");
+        ta.value = text; ta.focus(); ta.select();
+      };
+      try {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = "Tersalin"; btn.classList.add("copied");
+          setTimeout(() => { btn.textContent = "Salin untuk WhatsApp"; btn.classList.remove("copied"); }, 1800);
+        }, showFallback);
+      } catch (e) { showFallback(); }
+    });
+  });
+}
+
+$("#view-pic").addEventListener("click", () => { view = "pic"; try { localStorage.setItem("tl-view", view); } catch (e) {} render(); });
+$("#view-folder").addEventListener("click", () => { view = "folder"; try { localStorage.setItem("tl-view", view); } catch (e) {} render(); });
+renderFolders();
+render();
+</script>
+
+</body></html>
