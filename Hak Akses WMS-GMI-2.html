@@ -1,0 +1,389 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Hak Akses WMS-GMI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: satu kolom checklist untuk manager — info singkat, keputusan, daftar role, lalu daftar aksi bernomor per modul. */
+:root {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --ink: #161920;
+  --muted: #5d6272;
+  --line: #e1e4eb;
+  --soft: #eef0f5;
+  --accent: #2945c4;
+  --accent-soft: #e9edfc;
+  --warn: #9a5306;
+  --warn-soft: #fcf0dd;
+  --font-ui: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1015; --surface: #161920; --ink: #e8eaf0; --muted: #9ba1b0; --line: #2a2e39; --soft: #1d212a;
+    --accent: #93a6ff; --accent-soft: #1f2748; --warn: #f0b25a; --warn-soft: #342511; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1015; --surface: #161920; --ink: #e8eaf0; --muted: #9ba1b0; --line: #2a2e39; --soft: #1d212a;
+  --accent: #93a6ff; --accent-soft: #1f2748; --warn: #f0b25a; --warn-soft: #342511; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 36px 72px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 44px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(28px, 5vw, 38px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+.sec-head { display: grid; gap: 6px; max-width: 68ch; }
+
+header { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 64ch; color: var(--muted); font-size: 17px; }
+.howto { background: var(--accent-soft); border-radius: 10px; padding: 14px 18px; max-width: 68ch; font-size: 15px; }
+.howto b { font-weight: 600; }
+
+.facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.facts li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; font-size: 15px; }
+.facts b { font-weight: 600; }
+
+.asks { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: ask; }
+.asks li {
+  counter-increment: ask; display: grid; grid-template-columns: 30px 1fr; gap: 4px 12px;
+  background: var(--warn-soft); border-radius: 10px; padding: 14px 18px; font-size: 15px;
+}
+.asks li::before {
+  content: counter(ask); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--warn); color: var(--surface); font-weight: 700; font-size: 13px;
+  display: grid; place-items: center;
+}
+.asks .q { font-weight: 600; }
+.asks .ctx { color: var(--muted); }
+.ref { font-weight: 600; color: var(--accent); white-space: nowrap; }
+
+.roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.role { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: grid; gap: 2px; min-width: 0; }
+.role-top { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.role-top .n { margin-left: auto; font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.role p { font-size: 14px; color: var(--muted); }
+.role.basic { background: transparent; border-style: dashed; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+
+.filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.filter label { font-weight: 600; font-size: 15px; }
+.filter select {
+  font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; min-width: 220px; max-width: 100%;
+}
+.filter select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filter .hint { font-size: 14px; color: var(--muted); }
+
+.module { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.module h3 { font-size: 15px; font-weight: 650; padding: 12px 18px; background: var(--soft); border-bottom: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.05fr); gap: 6px 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); align-items: start; }
+.row:last-child { border-bottom: 0; }
+.row .no { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row .act { font-size: 15px; }
+.who { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; line-height: 1.3;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 8px; background: var(--surface);
+}
+.pill small { color: var(--muted); font-size: 12.5px; }
+.pill.everyone { background: var(--soft); border-color: transparent; font-weight: 500; }
+.pill.person { border-style: dashed; }
+.pill.hit { border-color: var(--accent); background: var(--accent-soft); }
+.empty { padding: 18px; color: var(--muted); }
+
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; max-width: 80ch; }
+
+@media (max-width: 640px) {
+  body { padding-block: 22px 56px; }
+  .row { grid-template-columns: 34px minmax(0, 1fr); }
+  .row .who { grid-column: 2; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Untuk konfirmasi manager · 29 Oktober 2026</div>
+    <h1>Hak Akses WMS-GMI</h1>
+    <p class="lede">Daftar siapa yang boleh melakukan apa di aplikasi WMS-GMI saat ini. Mohon dicek apakah sudah sesuai.</p>
+    <p class="howto"><b>Cara memberi masukan:</b> sebutkan nomor aksi dan perubahan yang diinginkan. Contoh: "No. 32, Admin juga boleh buat PO."</p>
+  </header>
+
+  <section aria-labelledby="info">
+    <h2 id="info">Perlu diketahui</h2>
+    <ul class="facts">
+      <li><b>Semua user bisa membuka hampir semua menu dan melihat data semua cabang.</b> Yang dibatasi adalah tombol aksinya (buat, ubah, batalkan, hapus).</li>
+      <li><b>Persetujuan (approve) dokumen ditentukan per orang, bukan per role.</b> Nama approver dipasang di Approval Template untuk tiap cabang dan jenis dokumen.</li>
+      <li><b>User yang punya lebih dari satu role mendapat gabungan semua aksesnya.</b> Saat ini 24 dari 58 user aktif punya lebih dari satu role.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="keputusan">
+    <div class="sec-head">
+      <h2 id="keputusan">Mohon keputusan</h2>
+      <p class="muted">Poin-poin yang kemungkinan belum sesuai dengan kebutuhan.</p>
+    </div>
+    <ol class="asks">
+      <li><span class="q">Semua user bisa melihat data semua cabang. Sudah sesuai?</span><span class="ctx">Atau user cukup melihat data cabangnya sendiri?</span></li>
+      <li><span class="q">Semua user bisa tambah, ubah, dan hapus data barang <span class="ref" data-ref="barang"></span>. Perlu dibatasi?</span><span class="ctx">Kalau ya, role mana saja yang boleh?</span></li>
+      <li><span class="q">Hanya Purchasing yang bisa membuat PO <span class="ref" data-ref="buatpo"></span>. Admin perlu boleh juga?</span><span class="ctx">Saat ini Admin melihat tombol "Buat PO", tapi ditolak saat menyimpan.</span></li>
+      <li><span class="q">Harga PO hanya bisa dilihat Purchasing <span class="ref" data-ref="hargapo"></span>. Sudah sesuai?</span><span class="ctx">Moderator dan Manager pun tidak bisa melihat harga.</span></li>
+      <li><span class="q">Siapa yang perlu diberi role Finance <span class="ref" data-ref="payment"></span>?</span><span class="ctx">Belum ada user dengan role Finance, jadi status pembayaran invoice sementara hanya bisa diubah Moderator.</span></li>
+      <li><span class="q">Siapa yang menerbitkan pengumuman Update Web <span class="ref" data-ref="updateweb"></span>?</span><span class="ctx">Syaratnya punya role Moderator dan IT sekaligus, dan saat ini belum ada user seperti itu.</span></li>
+      <li><span class="q">SPV, GL, Manager, Manufaktur, Logistik, Vendor, dan Customer belum punya akses khusus. Ada yang perlu ditambah?</span><span class="ctx">Saat ini akses mereka sama dengan user biasa.</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="role">
+    <div class="sec-head">
+      <h2 id="role">Role dan jumlah user</h2>
+      <p class="muted">Angka di kanan adalah jumlah user aktif dengan role tersebut.</p>
+    </div>
+    <div class="roles" id="roles"></div>
+  </section>
+
+  <section aria-labelledby="aksi">
+    <div class="sec-head">
+      <h2 id="aksi">Siapa boleh apa</h2>
+      <p class="muted">"Semua user" berarti siapa pun yang punya akun aktif.</p>
+    </div>
+    <div class="filter">
+      <label for="role-filter">Tampilkan untuk</label>
+      <select id="role-filter"></select>
+      <span class="hint" id="filter-hint"></span>
+    </div>
+    <div id="list" style="display:grid;gap:14px"></div>
+  </section>
+
+  <footer>Disusun dari aturan akses di kode aplikasi dan data user production per 29 Oktober 2026. Hanya menggambarkan kondisi sekarang, belum ada yang diubah.</footer>
+</div>
+
+<script>
+(function () {
+  var ROLES = [
+    { k: "moderator", label: "Moderator", color: "#f97316", n: 10, does: "Kelola user dan sistem, koreksi atau hapus dokumen, dan hampir semua aksi lain." },
+    { k: "admin", label: "Admin Site", color: "#ef4444", n: 26, does: "Buat MR dan SO, ubah atau batalkan dokumen pengiriman, SPB, dan consignment." },
+    { k: "purchasing", label: "Purchasing", color: "#f59e0b", n: 9, does: "Buat PO, lihat harga PO, kelola vendor." },
+    { k: "marketing", label: "Marketing", color: "#ec4899", n: 5, does: "Kelola customer, buat dan ubah SO Reguler." },
+    { k: "ppic", label: "PPIC", color: "#22c55e", n: 6, does: "Atur min/max stok gudang cabangnya, proses Request Stok." },
+    { k: "pjo", label: "PJO", color: "#3b82f6", n: 13, does: "Sama dengan PPIC: atur min/max stok gudang cabangnya, proses Request Stok." },
+    { k: "service", label: "Service", color: "#06b6d4", n: 4, does: "Buat MR, kelola data Periodic Maintenance." },
+    { k: "finance", label: "Finance", color: "#16a34a", n: 0, does: "Ubah status pembayaran invoice SPB dan tagihan rekonsil." },
+    { k: "it", label: "IT", color: "#64748b", n: 1, does: "Terbitkan Update Web (harus juga punya role Moderator)." },
+    { k: "wo_formula_editor", label: "WO Formula Editor", color: "#6366f1", n: 1, does: "Kelola formula (BOM) Working Order." },
+    { k: "spv", label: "SPV", color: "#eab308", n: 4, basic: true },
+    { k: "gl", label: "GL", color: "#a855f7", n: 12, basic: true },
+    { k: "manager", label: "Manager", color: "#6366f1", n: 5, basic: true },
+    { k: "manufaktur", label: "Manufaktur", color: "#14b8a6", n: 3, basic: true },
+    { k: "logistik", label: "Logistik", color: "#84cc16", n: 9, basic: true },
+    { k: "vendor", label: "Vendor", color: "#6b7280", n: 6, basic: true },
+    { k: "customer", label: "Customer", color: "#64748b", n: 3, basic: true }
+  ];
+  var ROLE = {};
+  ROLES.forEach(function (r) { ROLE[r.k] = r; });
+
+  // Penulisan "siapa": kunci role, opsional ":catatan". all = semua user,
+  // creator = pembuat dokumen, approver = approver yang ditunjuk, mod+it = harus punya dua role.
+  var DATA = [
+    ["Admin & sistem", [
+      ["Kelola akun user (buat, aktifkan, reset password, atur role & cabang)", "moderator"],
+      ["Atur alur persetujuan (Approval Template)", "moderator admin"],
+      ["Atur aturan level MR otomatis dan ubah level MR manual", "moderator"],
+      ["Import data dari Excel", "moderator:untuk PO juga perlu Purchasing"],
+      ["Koreksi dokumen yang sudah berjalan (MR, PR, PO, Receive, Share Stock, Invoice & Return SPB)", "moderator"],
+      ["Hapus dokumen beserta turunannya", "moderator"]
+    ]],
+    ["Data master", [
+      ["Lihat data barang, vendor, dan customer", "all"],
+      ["Tambah, ubah, hapus data barang", "all", "barang"],
+      ["Tambah dan ubah vendor", "moderator admin purchasing"],
+      ["Tambah dan ubah customer serta site customer", "moderator marketing"],
+      ["Kelola data cabang", "moderator"]
+    ]],
+    ["Stok & pengiriman", [
+      ["Lihat stok semua gudang dan riwayatnya", "all"],
+      ["Ubah batas min/max dan jumlah stok", "moderator:semua gudang ppic:gudang cabangnya pjo:gudang cabangnya"],
+      ["Upload stok awal bulan (SOH) dan min/max dari Excel", "moderator"],
+      ["Kirim permintaan atur min/max (Request Stok)", "all"],
+      ["Proses Request Stok", "moderator ppic pjo"],
+      ["Buat Delivery, Item Transfer, dan Share Stock", "all"],
+      ["Ubah status pengiriman manual, edit, batalkan, hapus Delivery", "moderator admin"],
+      ["Ubah status pengiriman Item Transfer secara manual", "moderator admin"],
+      ["Tandai Share Stock selesai secara manual", "moderator admin"],
+      ["Ubah alokasi Share Stock", "moderator"],
+      ["Lihat Barang dalam Pengiriman", "moderator:semua cabang all:ke cabangnya saja"],
+      ["Buat Job Costing", "all"],
+      ["Ubah status Job Costing", "moderator admin"],
+      ["Ubah isi Job Costing (selama masih open)", "moderator admin creator"]
+    ]],
+    ["Pengadaan (MR, PR, PO, Receive, Working Order)", [
+      ["Buat MR dan Scheduled MR", "moderator admin service"],
+      ["Setujui atau tolak dokumen (MR, PR, PO, Receive, Item Transfer, SPB, WO)", "approver:sesuai Approval Template"],
+      ["Tolak sebagian item MR", "approver:approver terakhir"],
+      ["Buka kunci (freeze) MR", "moderator"],
+      ["Buat PR", "all"],
+      ["Ubah status PR secara manual", "moderator admin"],
+      ["Buat PO", "purchasing", "buatpo"],
+      ["Lihat harga dan total PO", "purchasing", "hargapo"],
+      ["Edit atau revisi PO (disetujui ulang)", "moderator purchasing"],
+      ["Kelola PO Outstanding", "moderator purchasing"],
+      ["Hubungkan PO Non-PR ke PR", "moderator purchasing:tidak bisa menghapus hubungan"],
+      ["Buat Receive Item", "all"],
+      ["Buat Working Order", "all"],
+      ["Edit Working Order", "moderator creator:saat menunggu approval approver:saat berjalan"],
+      ["Selesaikan Working Order", "moderator approver:approver WO tersebut"],
+      ["Kelola formula (BOM) Working Order", "moderator wo_formula_editor"],
+      ["Beri atau cabut akses formula Working Order", "moderator"]
+    ]],
+    ["Stock Out (SPB)", [
+      ["Buat SPB, PO SPB, DO SPB, Invoice, dan Return SPB", "all"],
+      ["Edit, batalkan, hapus SPB, PO SPB, dan DO SPB", "moderator admin"],
+      ["Ubah status pembayaran invoice", "moderator finance", "payment"]
+    ]],
+    ["SO & DO Reguler", [
+      ["Buat SO Reguler", "moderator admin marketing"],
+      ["Edit SO Reguler", "moderator marketing"],
+      ["Batalkan SO Reguler", "moderator"],
+      ["Buat DO Reguler", "all"],
+      ["Update status pengiriman DO Reguler", "moderator admin creator"],
+      ["Edit dan hapus DO Reguler", "moderator admin"],
+      ["Batalkan DO Reguler", "moderator"]
+    ]],
+    ["Consignment customer", [
+      ["Buat SO Consignment, Item Konsinyasi (IK), dan Penerimaan", "all"],
+      ["Edit dan hapus SO Consignment", "moderator admin"],
+      ["Hapus IK dan Penerimaan", "moderator admin"]
+    ]],
+    ["Konsinyasi vendor", [
+      ["Buat PR, GR, dan rekonsil konsinyasi", "all"],
+      ["Hapus GR dan lakukan stock opname konsinyasi", "moderator admin"],
+      ["Buat PO dari rekonsil", "purchasing"],
+      ["Ubah tagihan rekonsil", "moderator admin purchasing finance"],
+      ["Buka kembali rekonsil", "moderator admin purchasing"],
+      ["Hapus rekonsil yang belum punya PO", "moderator admin creator:saat masih draft"]
+    ]],
+    ["Periodic Maintenance", [
+      ["Lihat unit dan Forecasting AC", "all"],
+      ["Kelola unit, part, penggantian, dan export data", "moderator service"]
+    ]],
+    ["Umum", [
+      ["Dashboard, notifikasi, tanda tangan, dan profil", "all"],
+      ["Baca dan komentari pengumuman Update Web", "all"],
+      ["Terbitkan pengumuman Update Web", "mod+it", "updateweb"]
+    ]]
+  ];
+
+  var PSEUDO = {
+    all: { label: "Semua user", cls: "everyone" },
+    creator: { label: "Pembuat dokumen", cls: "person" },
+    approver: { label: "Approver yang ditunjuk", cls: "person" },
+    "mod+it": { label: "Moderator + IT", cls: "", color: "#f97316", note: "harus punya dua-duanya" }
+  };
+
+  var no = 0, REF = {};
+  var MODULES = DATA.map(function (m) {
+    return {
+      name: m[0],
+      rows: m[1].map(function (r) {
+        no++;
+        if (r[2]) REF[r[2]] = no;
+        var who = r[1].split(" ").map(function (tok) {
+          var i = tok.indexOf(":");
+          return i < 0 ? { k: tok, note: "" } : { k: tok.slice(0, i), note: tok.slice(i + 1) };
+        });
+        return { no: no, act: r[0], who: who };
+      })
+    };
+  });
+  // Catatan berisi spasi ditulis dengan spasi biasa di atas; gabungkan kembali token yang terpotong.
+  MODULES.forEach(function (m) {
+    m.rows.forEach(function (r) {
+      var fixed = [];
+      r.who.forEach(function (w) {
+        var known = ROLE[w.k] || PSEUDO[w.k];
+        if (known) fixed.push(w);
+        else if (fixed.length) fixed[fixed.length - 1].note += " " + (w.note ? w.k + ":" + w.note : w.k);
+      });
+      r.who = fixed;
+    });
+  });
+
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  function pill(w, sel) {
+    var p = PSEUDO[w.k], r = ROLE[w.k];
+    var label = p ? p.label : r.label;
+    var color = p ? p.color : r.color;
+    var note = w.note || (p && p.note) || "";
+    var hit = sel && (w.k === sel || (w.k === "mod+it" && (sel === "moderator" || sel === "it")));
+    return '<span class="pill ' + (p ? p.cls : "") + (hit ? " hit" : "") + '">' +
+      (color ? '<i class="dot" style="background:' + color + '"></i>' : "") + esc(label) +
+      (note ? " <small>(" + esc(note) + ")</small>" : "") + "</span>";
+  }
+
+  function rowMatches(r, sel) {
+    if (!sel) return true;
+    return r.who.some(function (w) {
+      return w.k === sel || w.k === "all" || w.k === "creator" || w.k === "approver" ||
+        (w.k === "mod+it" && (sel === "moderator" || sel === "it"));
+    });
+  }
+
+  function renderRoles() {
+    document.getElementById("roles").innerHTML = ROLES.map(function (r) {
+      return '<div class="role' + (r.basic ? " basic" : "") + '"><div class="role-top"><i class="dot" style="background:' + r.color + '"></i>' + esc(r.label) +
+        '<span class="n">' + r.n + " user</span></div><p>" + (r.basic ? "Belum ada akses khusus. Sama dengan user biasa." : esc(r.does)) + "</p></div>";
+    }).join("");
+  }
+
+  var select = document.getElementById("role-filter");
+  select.innerHTML = '<option value="">Semua aksi</option>' + ROLES.map(function (r) {
+    return '<option value="' + r.k + '">' + esc(r.label) + " (" + r.n + " user)</option>";
+  }).join("");
+
+  function renderList() {
+    var sel = select.value;
+    var total = 0;
+    var html = MODULES.map(function (m) {
+      var rows = m.rows.filter(function (r) { return rowMatches(r, sel); });
+      total += rows.length;
+      if (!rows.length) return "";
+      return '<div class="module"><h3>' + esc(m.name) + "</h3>" + rows.map(function (r) {
+        return '<div class="row"><span class="no">' + r.no + '</span><span class="act">' + esc(r.act) + '</span><span class="who">' +
+          r.who.map(function (w) { return pill(w, sel); }).join("") + "</span></div>";
+      }).join("") + "</div>";
+    }).join("");
+    document.getElementById("list").innerHTML = html || '<p class="empty">Tidak ada aksi.</p>';
+    document.getElementById("filter-hint").textContent = sel
+      ? total + " dari " + no + " aksi bisa dilakukan " + ROLE[sel].label + (ROLE[sel].basic ? " (semuanya akses umum)" : "")
+      : no + " aksi";
+  }
+
+  document.querySelectorAll("[data-ref]").forEach(function (el) {
+    var n = REF[el.getAttribute("data-ref")];
+    if (n) el.textContent = "(No. " + n + ")";
+  });
+
+  select.addEventListener("change", renderList);
+  renderRoles();
+  renderList();
+})();
+</script>
+
+</body></html>
